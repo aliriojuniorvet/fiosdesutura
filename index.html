@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Quiz — Fios e Materiais de Sutura</title>
+<style>
+  :root{
+    --azul:#1a56db;--azul-esc:#1e429f;--azul-cl:#e8f0fe;
+    --verde:#057a55;--verde-cl:#def7ec;
+    --verm:#c81e1e;--verm-cl:#fde8e8;
+    --laranja:#b45309;--laranja-cl:#fef3c7;
+    --cinza:#374151;--cinza-cl:#f9fafb;
+    --borda:#d1d5db;--branco:#fff;
+    --raio:12px;--raio-sm:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4ff;
+       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  .tela{display:none;width:100%;max-width:700px;animation:fadeIn .35s ease}
+  .tela.ativa{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .card{background:var(--branco);border-radius:var(--raio);
+        box-shadow:0 4px 24px rgba(26,86,219,.10);padding:2rem}
+  /* TELA INICIAL */
+  .header-badge{display:inline-block;background:var(--azul-cl);color:var(--azul-esc);
+    font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    padding:4px 12px;border-radius:20px;margin-bottom:1rem}
+  .header-badge .dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+    background:var(--azul);margin-right:6px;vertical-align:middle}
+  h1{font-size:1.6rem;font-weight:700;color:var(--azul-esc);margin-bottom:.4rem}
+  .subtitulo{font-size:.92rem;color:#6b7280;margin-bottom:1.5rem}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+  .info-box{background:var(--cinza-cl);border-radius:var(--raio-sm);
+    padding:.75rem 1rem;font-size:.85rem;color:var(--cinza)}
+  .info-box strong{display:block;font-size:1.05rem;color:var(--azul-esc);margin-bottom:2px}
+  label.campo-label{display:block;font-size:.85rem;font-weight:600;
+    color:var(--cinza);margin-bottom:6px;margin-top:1rem}
+  input[type=text],select{width:100%;padding:10px 14px;border:1.5px solid var(--borda);
+    border-radius:var(--raio-sm);font-size:.95rem;outline:none;transition:border-color .2s}
+  input[type=text]:focus,select:focus{border-color:var(--azul)}
+  .aviso-block{background:var(--laranja-cl);border-left:4px solid #d97706;
+    border-radius:var(--raio-sm);padding:.75rem 1rem;
+    font-size:.82rem;color:var(--laranja);margin-top:1rem;line-height:1.55}
+  .aviso-block strong{display:block;margin-bottom:2px}
+  .btn{display:block;width:100%;padding:13px;border:none;border-radius:var(--raio-sm);
+    font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;
+    margin-top:1.25rem;letter-spacing:.02em}
+  .btn:active{transform:scale(.98)}
+  .btn-primary{background:var(--azul);color:#fff}
+  .btn-primary:hover{opacity:.9}
+  .btn-avancar{display:none;width:100%;padding:13px;border:none;border-radius:var(--raio-sm);
+    font-size:1rem;font-weight:700;cursor:pointer;margin-top:1.25rem;letter-spacing:.02em;
+    background:var(--azul);color:#fff;transition:opacity .2s,transform .1s}
+  .btn-avancar:hover{opacity:.9}
+  .btn-avancar:active{transform:scale(.98)}
+  .btn-avancar.visivel{display:block}
+  /* TELA QUIZ */
+  .quiz-top{display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:1.25rem;flex-wrap:wrap;gap:8px}
+  .qnum-label{font-size:.8rem;font-weight:700;color:var(--azul-esc);
+    background:var(--azul-cl);padding:4px 12px;border-radius:20px}
+  .timer-wrap{display:flex;align-items:center;gap:8px}
+  .timer-icon{font-size:1rem}
+  .timer-display{font-size:1.4rem;font-weight:800;color:var(--azul-esc);min-width:52px;text-align:right}
+  .timer-display.urgente{color:var(--verm)}
+  .prog-geral-bg{height:4px;background:#e5e7eb;border-radius:2px;margin-bottom:1.5rem;overflow:hidden}
+  .prog-geral{height:100%;background:var(--verde);border-radius:2px;transition:width .4s}
+  .qtexto{font-size:1rem;font-weight:600;color:var(--cinza);
+    line-height:1.6;margin-bottom:1.25rem}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt-btn{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
+    border:1.5px solid var(--borda);border-radius:var(--raio-sm);
+    cursor:pointer;background:var(--branco);text-align:left;
+    font-size:.92rem;color:var(--cinza);line-height:1.5;
+    transition:border-color .18s,background .18s;width:100%}
+  .opt-btn:hover:not(:disabled){border-color:var(--azul);background:var(--azul-cl)}
+  .opt-btn:disabled{cursor:default}
+  .opt-btn.selecionada{border-color:var(--azul)!important;background:var(--azul-cl)!important}
+  .opt-key{font-weight:800;min-width:22px;color:var(--azul-esc);flex-shrink:0}
+  /* TELA RESULTADO */
+  .resultado-hero{text-align:center;padding:1rem 0 1.5rem}
+  .resultado-score{font-size:3.5rem;font-weight:800;color:var(--azul-esc);line-height:1}
+  .resultado-pts{font-size:1rem;color:#6b7280;margin-top:4px}
+  .resultado-nota{font-size:1.5rem;font-weight:700;margin-top:.75rem}
+  .nota-verde{color:var(--verde)}
+  .nota-laranja{color:#d97706}
+  .nota-verm{color:var(--verm)}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:1.25rem 0}
+  .stat-box{background:var(--cinza-cl);border-radius:var(--raio-sm);padding:.85rem;text-align:center}
+  .stat-box .sv{font-size:1.6rem;font-weight:800}
+  .stat-box .sl{font-size:.75rem;color:#6b7280;margin-top:2px}
+  .sv-verde{color:var(--verde)}
+  .sv-verm{color:var(--verm)}
+  .sv-azul{color:var(--azul)}
+  .resultado-msg{background:var(--azul-cl);border-radius:var(--raio-sm);
+    padding:.9rem 1rem;font-size:.88rem;color:var(--azul-esc);
+    line-height:1.6;margin-bottom:1rem}
+  .enviando{text-align:center;font-size:.85rem;color:#6b7280;margin-top:.75rem}
+  .bloqueio-msg{background:#f3f4f6;border-radius:var(--raio-sm);
+    padding:.75rem 1rem;font-size:.83rem;color:#6b7280;text-align:center;
+    margin-top:1rem;line-height:1.5}
+  @media(max-width:480px){
+    .card{padding:1.25rem}
+    .info-grid{grid-template-columns:1fr}
+    .stats-grid{grid-template-columns:1fr 1fr}
+    h1{font-size:1.3rem}
+    .resultado-score{font-size:2.8rem}
+  }
+</style>
+</head>
+<body>
+
+<!-- TELA 1 — IDENTIFICAÇÃO -->
+<div class="tela ativa" id="tela-inicio">
+  <div class="card">
+    <div class="header-badge"><span class="dot"></span>Medicina Veterinária</div>
+    <h1>Fios e Materiais de Sutura</h1>
+    <p class="subtitulo">Quiz Avaliativo · Técnicas Cirúrgicas e Instrumentalização · Prof. José Alírio</p>
+
+    <div class="info-grid">
+      <div class="info-box"><strong>10 questões</strong>Objetivas — múltipla escolha</div>
+      <div class="info-box"><strong>20 minutos</strong>Tempo total da avaliação</div>
+      <div class="info-box"><strong>0,5 pt / acerto</strong>Máximo de 5,0 pontos</div>
+      <div class="info-box"><strong>1 tentativa</strong>Bloqueio após envio</div>
+    </div>
+
+    <label class="campo-label">Nome completo</label>
+    <input type="text" id="inputNome" placeholder="Digite seu nome completo"/>
+
+    <label class="campo-label">Turma</label>
+    <select id="selectTurma">
+      <option value="">Selecione sua turma</option>
+      <option value="A">Turma A</option>
+      <option value="B">Turma B</option>
+    </select>
+
+    <div class="aviso-block">
+      <strong>⚠ Atenção antes de começar</strong>
+      Ao iniciar, o cronômetro de 20 minutos começa imediatamente. Não é possível pausar ou reiniciar a avaliação. Após o envio, você não poderá refazer o quiz neste dispositivo.
+    </div>
+
+    <button class="btn btn-primary" onclick="iniciar()">Iniciar avaliação →</button>
+  </div>
+</div>
+
+<!-- TELA 2 — QUIZ -->
+<div class="tela" id="tela-quiz">
+  <div class="card">
+    <div class="prog-geral-bg"><div class="prog-geral" id="progGeral" style="width:0%"></div></div>
+
+    <div class="quiz-top">
+      <span class="qnum-label" id="qnumLabel">Questão 1 de 10</span>
+      <div class="timer-wrap">
+        <span class="timer-icon">⏱</span>
+        <span class="timer-display" id="timerGeral">20:00</span>
+      </div>
+    </div>
+
+
+    <div class="qtexto" id="qtexto"></div>
+    <div class="opts" id="optsContainer"></div>
+    <button class="btn-avancar" id="btnAvancar" onclick="avancar()">Avançar →</button>
+  </div>
+</div>
+
+<!-- TELA 3 — RESULTADO -->
+<div class="tela" id="tela-resultado">
+  <div class="card">
+    <div class="header-badge"><span class="dot"></span>Avaliação concluída</div>
+
+    <div class="resultado-hero">
+      <div class="resultado-score" id="resScore">0,0</div>
+      <div class="resultado-pts">pontos de 5,0</div>
+      <div class="resultado-nota" id="resNota"></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="sv sv-verde" id="resAcertos">0</div>
+        <div class="sl">acertos</div>
+      </div>
+      <div class="stat-box">
+        <div class="sv sv-verm" id="resErros">0</div>
+        <div class="sl">erros</div>
+      </div>
+      <div class="stat-box">
+        <div class="sv sv-azul" id="resTempo">—</div>
+        <div class="sl">tempo usado</div>
+      </div>
+    </div>
+
+    <div class="resultado-msg" id="resMensagem"></div>
+    <div class="enviando" id="enviandoStatus">Enviando resultado… ⏳</div>
+
+    <div class="bloqueio-msg">
+      🔒 Esta avaliação foi encerrada e seu resultado foi registrado.<br>
+      Não é possível realizar uma nova tentativa neste dispositivo.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIGURAÇÃO
+═══════════════════════════════════════ */
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZ-ULzvIckUuStjPOMSctl1LHNDMspBYV13Kyn6xI_TPZVM_HfYKwMKbiixcOyfKRkHw/exec';
+const SHEET_ABA         = 'RESULTADOS FIOS DE SUTURA';
+const TEMPO_TOTAL_SEG   = 20 * 60;
+const PONTOS_POR_ACERTO = 0.5;
+
+/* ═══════════════════════════════════════
+   QUESTÕES
+   Gabaritos: B A C D A B C B D C
+═══════════════════════════════════════ */
+const perguntas = [
+  { // Q1 — gabarito B (índice 1)
+    q: "Qual mecanismo é responsável pela absorção mais rápida do catgut em tecidos infectados?",
+    opts: [
+      "A — Hidrólise alcalina acelerada pelo pH bacteriano local",
+      "B — Aumento da atividade enzimática proteolítica no sítio infeccioso",
+      "C — Fagocitose exclusiva por neutrófilos no tecido infectado",
+      "D — Degradação mecânica por pressão osmótica local"
+    ],
+    c: 1
+  },
+  { // Q2 — gabarito A (índice 0)
+    q: "Sobre a capilaridade dos fios multifilamentares, qual afirmativa está CORRETA?",
+    opts: [
+      "A — Permitem que bactérias penetrem entre os filamentos e se proliferem protegidas das células de defesa",
+      "B — Reduzem a aderência bacteriana por drenarem o exsudato do sítio cirúrgico",
+      "C — São preferidos em tecidos contaminados por não oferecerem substrato para biofilme",
+      "D — A capilaridade é exclusiva de fios de origem animal, não ocorrendo nos sintéticos"
+    ],
+    c: 0
+  },
+  { // Q3 — gabarito C (índice 2)
+    q: "A polidioxanona (PDS) se diferencia dos demais absorvíveis sintéticos porque:",
+    opts: [
+      "A — É multifilamentada e possui absorção completa em menos de 30 dias",
+      "B — É indicada exclusivamente para cirurgias oftálmicas e cardiovasculares",
+      "C — Mantém 70% da força tênsil aos 28 dias, enquanto multifilamentares similares mantêm apenas 5%",
+      "D — É contraindicada em síntese de parede abdominal por causar granuloma de corpo estranho"
+    ],
+    c: 2
+  },
+  { // Q4 — gabarito D (índice 3)
+    q: "Qual fio inabsorvível é descrito como a sutura MENOS tromboembólica, sendo frequentemente utilizado em cirurgias vasculares?",
+    opts: [
+      "A — Poliéster multifilamentado (Mersilene®)",
+      "B — Náilon monofilamentar (Poliamida)",
+      "C — Aço inoxidável monofilamentar",
+      "D — Polipropileno (Prolene®)"
+    ],
+    c: 3
+  },
+  { // Q5 — gabarito A (índice 0)
+    q: "Comparando poliglactina 910 e ácido poliglicólico em ileocistoplastia (Ferreira et al., 2005), qual resultado foi observado?",
+    opts: [
+      "A — A poliglactina 910 foi 40% mais eficiente, sem reação supurativa nem calcificação na linha de sutura",
+      "B — O ácido poliglicólico apresentou menor reação inflamatória e foi eleito como material de primeira escolha",
+      "C — Ambos os fios produziram resultados equivalentes em todos os parâmetros avaliados",
+      "D — A poliglactina 910 causou intensa calcificação na linha de sutura em todos os animais"
+    ],
+    c: 0
+  },
+  { // Q6 — gabarito B (índice 1)
+    q: "O fio de seda é classificado como inabsorvível, mas apresenta uma característica que o diferencia dos demais inabsorvíveis sintéticos:",
+    opts: [
+      "A — É produzido na forma monofilamentar e não sofre nenhuma degradação tecidual ao longo do tempo",
+      "B — Perde lentamente a resistência à tensão e é absorvido em aproximadamente dois anos após implantação",
+      "C — É totalmente inerte e não induz reação tecidual em nenhum tipo de tecido",
+      "D — A molécula de sericina confere à seda a menor reatividade tecidual entre todos os fios naturais"
+    ],
+    c: 1
+  },
+  { // Q7 — gabarito C (índice 2)
+    q: "Qual propriedade do fio de algodão representa sua principal desvantagem em tecidos contaminados?",
+    opts: [
+      "A — Baixa resistência tênsil inicial, levando à deiscência precoce da ferida",
+      "B — Estrutura monofilamentar que retém secreções entre os filamentos",
+      "C — Alta capilaridade e capacidade de absorção de fluidos, favorecendo o desenvolvimento microbiano",
+      "D — Degradação ultrarrápida em ambientes infectados, perdendo resistência em menos de 48 horas"
+    ],
+    c: 2
+  },
+  { // Q8 — gabarito B (índice 1)
+    q: "Ribeiro et al. (2005) demonstraram que nas suturas internas com náilon monofilamentar em ratos, observou-se:",
+    opts: [
+      "A — Mínima reação tecidual e rápida reepitelização sem formação de cápsula fibrosa",
+      "B — Maior proliferação fibroblástica, fibrose e perpetuação da reação tecidual em relação às suturas externas",
+      "C — Absorção completa do náilon em 21 dias com resolução total da resposta inflamatória",
+      "D — Formação de granuloma séptico com necrose tecidual intensa nos três períodos avaliados"
+    ],
+    c: 1
+  },
+  { // Q9 — gabarito D (índice 3)
+    q: "Sobre o fio de aço inoxidável, assinale a afirmativa INCORRETA:",
+    opts: [
+      "A — É biologicamente inerte, não capilar e facilmente esterilizável em autoclave",
+      "B — Apresenta maior resistência à tensão em comparação a todos os outros fios cirúrgicos",
+      "C — Pode ser utilizado em ferimentos contaminados por não propiciar proliferação bacteriana",
+      "D — É contraindicado em tecidos contaminados e ósseos por causar corrosão e inflamação local"
+    ],
+    c: 3
+  },
+  { // Q10 — gabarito C (índice 2)
+    q: "Um veterinário realiza cistorrafia em cadela com suspeita de leve contaminação. Qual fio é MAIS indicado?",
+    opts: [
+      "A — Poliéster multifilamentado, pois é o de maior resistência tênsil entre os sintéticos",
+      "B — Catgut cromado, pois sua absorção é retardada em tecidos infectados, garantindo suporte",
+      "C — Poliglactina 910, pois é sintética, absorvível, de baixa reatividade e adequada para cirurgia urológica",
+      "D — Náilon monofilamentar, por ser inabsorvível e garantir suporte permanente à sutura vesical"
+    ],
+    c: 2
+  }
+];
+
+/* ═══════════════════════════════════════
+   ESTADO
+═══════════════════════════════════════ */
+let nome = '', turma = '';
+let qAtual = 0, acertos = 0, erros = 0, pontos = 0;
+let respondida = false;
+let timerGeralID = null;
+let segundosRestantes = TEMPO_TOTAL_SEG;
+let iniciouEm = null;
+
+/* ═══════════════════════════════════════
+   BLOQUEIO localStorage
+═══════════════════════════════════════ */
+function chave(n, t){ return 'qfios_' + t + '_' + n.trim().toLowerCase().replace(/\s+/g,'_'); }
+function jaFez(n, t){ try{ return !!localStorage.getItem(chave(n,t)); }catch(e){ return false; } }
+function bloquear(n, t){ try{ localStorage.setItem(chave(n,t), Date.now()); }catch(e){} }
+
+/* ═══════════════════════════════════════
+   INICIAR
+═══════════════════════════════════════ */
+function iniciar(){
+  nome  = document.getElementById('inputNome').value.trim();
+  turma = document.getElementById('selectTurma').value;
+  if(!nome){ alert('Digite seu nome completo.'); return; }
+  if(nome.split(' ').filter(Boolean).length < 2){ alert('Digite nome e sobrenome.'); return; }
+  if(!turma){ alert('Selecione sua turma.'); return; }
+  if(jaFez(nome, turma)){
+    alert('Você já realizou esta avaliação. Não é permitida segunda tentativa.');
+    return;
+  }
+  iniciouEm = new Date();
+  mostrarTela('tela-quiz');
+  renderQuestao();
+  iniciarTimerGeral();
+}
+
+/* ═══════════════════════════════════════
+   TIMER GERAL
+═══════════════════════════════════════ */
+function iniciarTimerGeral(){
+  clearInterval(timerGeralID);
+  timerGeralID = setInterval(()=>{
+    segundosRestantes--;
+    atualizarRelogio();
+    if(segundosRestantes <= 0) finalizarProva(true);
+  }, 1000);
+}
+
+function atualizarRelogio(){
+  const m = Math.floor(segundosRestantes / 60);
+  const s = segundosRestantes % 60;
+  const el = document.getElementById('timerGeral');
+  el.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  el.className = 'timer-display' + (segundosRestantes <= 120 ? ' urgente' : '');
+}
+
+/* ═══════════════════════════════════════
+   RENDERIZAR QUESTÃO
+═══════════════════════════════════════ */
+function renderQuestao(){
+  const q = perguntas[qAtual];
+  const total = perguntas.length;
+
+  document.getElementById('qnumLabel').textContent = 'Questão ' + (qAtual+1) + ' de ' + total;
+  document.getElementById('progGeral').style.width = (qAtual / total * 100) + '%';
+  document.getElementById('qtexto').textContent = q.q;
+
+  const keys = ['A','B','C','D'];
+  const cont = document.getElementById('optsContainer');
+  cont.innerHTML = '';
+  q.opts.forEach((txt, i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    // remove o prefixo "A — " do texto pois já mostramos a chave separada
+    const label = txt.replace(/^[A-D] — /, '');
+    btn.innerHTML = '<span class="opt-key">' + keys[i] + '</span><span>' + label + '</span>';
+    btn.onclick = () => responder(i);
+    cont.appendChild(btn);
+  });
+
+  document.getElementById('btnAvancar').className = 'btn-avancar';
+}
+
+/* ═══════════════════════════════════════
+   RESPONDER
+═══════════════════════════════════════ */
+let selecaoAtual = -1;
+
+function responder(idx){
+  selecaoAtual = idx;
+  const btns = document.querySelectorAll('.opt-btn');
+  btns.forEach(b => b.classList.remove('selecionada'));
+  btns[idx].classList.add('selecionada');
+  document.getElementById('btnAvancar').className = 'btn-avancar visivel';
+}
+
+function avancar(){
+  if(selecaoAtual === -1) return;
+
+  const q = perguntas[qAtual];
+  if(selecaoAtual === q.c){ acertos++; pontos += PONTOS_POR_ACERTO; }
+  else { erros++; }
+
+  selecaoAtual = -1;
+  qAtual++;
+  if(qAtual >= perguntas.length) finalizarProva(false);
+  else renderQuestao();
+}
+
+/* ═══════════════════════════════════════
+   FINALIZAR
+═══════════════════════════════════════ */
+function finalizarProva(porTempo){
+  clearInterval(timerGeralID);
+
+  const agora   = new Date();
+  const usados  = Math.floor((agora - iniciouEm) / 1000);
+  const mu      = Math.floor(usados / 60);
+  const su      = usados % 60;
+  const tempoStr = String(mu).padStart(2,'0') + ':' + String(su).padStart(2,'0');
+  const data    = agora.toLocaleDateString('pt-BR');
+  const hora    = agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+
+  const pontosFinais = Math.min(pontos, 5.0);
+
+  mostrarTela('tela-resultado');
+
+  document.getElementById('resScore').textContent   = pontosFinais.toFixed(1).replace('.',',');
+  document.getElementById('resAcertos').textContent = acertos;
+  document.getElementById('resErros').textContent   = erros;
+  document.getElementById('resTempo').textContent   = tempoStr;
+
+  const notaEl = document.getElementById('resNota');
+  let msg = '';
+  if(pontosFinais >= 4.5){
+    notaEl.textContent = 'Excelente desempenho!';
+    notaEl.className   = 'resultado-nota nota-verde';
+    msg = 'Parabéns! Você demonstrou domínio sólido sobre as propriedades, aplicabilidade e reações teciduais dos fios de sutura.';
+  } else if(pontosFinais >= 3.0){
+    notaEl.textContent = 'Bom desempenho';
+    notaEl.className   = 'resultado-nota nota-laranja';
+    msg = 'Bom resultado. Revise as propriedades específicas de cada fio, especialmente capilaridade, tempo de absorção e indicações clínicas.';
+  } else {
+    notaEl.textContent = 'Necessita revisão';
+    notaEl.className   = 'resultado-nota nota-verm';
+    msg = 'Recomenda-se revisão aprofundada do material sobre fios cirúrgicos, com atenção às classificações, reações teciduais e contraindicações.';
+  }
+  if(porTempo) msg = '⏰ Tempo encerrado. ' + msg;
+  document.getElementById('resMensagem').textContent = msg;
+
+  bloquear(nome, turma);
+  enviarResultado({ nome, turma, pontos: pontosFinais.toFixed(1), acertos, erros, data, hora });
+}
+
+/* ═══════════════════════════════════════
+   ENVIO → GOOGLE SHEETS
+   Colunas: Nome | Turma | Pontos OAT | Acertos | Erros | Data | Horário
+═══════════════════════════════════════ */
+function enviarResultado(d){
+  const el = document.getElementById('enviandoStatus');
+  el.textContent = 'Enviando resultado para o registro… ⏳';
+
+  fetch(GOOGLE_SCRIPT_URL, {
+    method : 'POST',
+    mode   : 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body   : JSON.stringify({
+      acao     : 'registrar',
+      aba      : SHEET_ABA,
+      nome     : d.nome,
+      turma    : d.turma,
+      pontuacao: d.pontos,
+      acertos  : d.acertos,
+      erros    : d.erros,
+      data     : d.data,
+      hora     : d.hora
+    })
+  })
+  .then(()=>{ el.textContent = '✅ Resultado registrado com sucesso!'; })
+  .catch(()=>{ el.textContent = '⚠ Falha no envio automático. Anote seu resultado e informe ao professor.'; });
+}
+
+/* ═══════════════════════════════════════
+   NAVEGAÇÃO
+═══════════════════════════════════════ */
+function mostrarTela(id){
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.getElementById(id).classList.add('ativa');
+  window.scrollTo(0,0);
+}
+</script>
+
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║  INSTRUÇÕES — GOOGLE APPS SCRIPT                                 ║
+╠══════════════════════════════════════════════════════════════════╣
+║  1. Abra o Google Sheets → Extensões → Apps Script               ║
+║  2. Apague o conteúdo e cole o código abaixo → Salve (Ctrl+S)   ║
+║  3. Implantar → Nova implantação → App da Web                    ║
+║     · Executar como: Minha conta                                 ║
+║     · Acesso: Qualquer pessoa                                    ║
+║  4. Copie a URL gerada                                           ║
+║  5. Cole em GOOGLE_SCRIPT_URL no início deste arquivo HTML       ║
+╚══════════════════════════════════════════════════════════════════╝
+
+──────────── CÓDIGO DO APPS SCRIPT ────────────
+
+function doPost(e) {
+  try {
+    var d     = JSON.parse(e.postData.contents);
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(d.aba || 'RESULTADOS FIOS DE SUTURA');
+    if (!sheet) return ContentService.createTextOutput('ABA_NAO_ENCONTRADA');
+    if (d.acao === 'registrar') {
+      sheet.appendRow([
+        d.nome,       // A — Nome
+        d.turma,      // B — Turma
+        d.pontuacao,  // C — Pontos OAT
+        d.acertos,    // D — Acertos
+        d.erros,      // E — Erros
+        d.data,       // F — Data
+        d.hora        // G — Horário
+      ]);
+    }
+    return ContentService.createTextOutput('OK');
+  } catch(err) {
+    return ContentService.createTextOutput('ERRO: ' + err.toString());
+  }
+}
+
+───────────────────────────────────────────────
+-->
+</body>
+</html>
